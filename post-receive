@@ -1,7 +1,8 @@
 #!/bin/sh
 
-repo_name="project"
-repo_path="/data/git/project.git"
+current_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_path="$(dirname "$current_dir")"
+repo_name="$(basename "$repo_path" .git)"
 script_path="/data"
 
 while read oldrev newrev ref
