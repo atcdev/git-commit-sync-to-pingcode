@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+# 导入必要的模块和库
 import sys
 import os
 import urllib
@@ -11,10 +14,12 @@ client_id = ''
 client_secret = ''
 rest_api_root = 'https://open.pingcode.com'
 
+# 读取并解析 HTTP 响应数据为 JSON 格式
 def resolve_res_data(res):
         res_data = res.read().decode('UTF8')
         return json.loads(res_data)
 
+# 从字符串中解析出所有符合格式的 issue 标识符
 def resolve_identifiers(str):
         matchs = re.findall('#[a-zA-Z0-9]+-[0-9]+', str, re.M)
         identifiers = []
@@ -22,6 +27,7 @@ def resolve_identifiers(str):
             identifiers.append(match[1:])
         return identifiers
 
+# 从临时目录中加载缓存数据
 def get_cache():
         cache_file = os.path.join(tempfile.gettempdir(), 'pc_cache')
         if os.path.exists(cache_file):
@@ -32,6 +38,7 @@ def get_cache():
         else:
             return
 
+# 通过客户端认证方式获取访问令牌
 def get_token():
         uri = rest_api_root + '/v1/auth/token?grant_type=client_credentials&client_id=' + client_id + '&&client_secret=' + client_secret
         res_data = resolve_res_data(urllib.request.urlopen(uri))
@@ -40,6 +47,7 @@ def get_token():
         else:
             raise Exception("Invalid client_id or client_secret")
 
+# 根据提供的token验证服务API是否响应
 def ping(token):
         uri = rest_api_root + '/v1/auth/ping?access_token=' + token
         res_data = resolve_res_data(urllib.request.urlopen(uri))
@@ -48,6 +56,7 @@ def ping(token):
         else:
             return False
 
+# 获取资源信息，根据token、路径、属性和值获取资源ID
 def get_resource(token, path, prop, value):
         method = "GET"
         uri = rest_api_root + path + "?" + prop + "=" + urllib.parse.quote(value)
@@ -59,6 +68,7 @@ def get_resource(token, path, prop, value):
         else:
             return
 
+# 创建资源，根据token、路径、请求体和是否抛出异常来创建资源并返回ID
 def create_resource(token, path, body, throwError):
         method = 'POST'
         uri = rest_api_root + path
@@ -76,33 +86,39 @@ def create_resource(token, path, body, throwError):
                 value = sys.exc_info()
                 raise value[1]
 
+# 根据token、路径、属性和值，获取或创建资源并返回ID
 def get_or_create_resource(token, path, prop, value, body):
         id = get_resource(token, path, prop, value)
         if not id:
             id = create_resource(token, path, body, True)
         return id
 
+# 获取或创建产品ID
 def get_product_id(token):
         path = '/v1/scm/products'
         body = {'name': 'Git', 'type': 'git'}
         return get_or_create_resource(token, path, 'name', 'Git', body)
 
+# 获取或创建仓库ID
 def get_repo_id(token, product_id, name):
         path = '/v1/scm/products/' + product_id + '/repositories'
         body = {'name': name, 'full_name': name}
         return get_or_create_resource(token, path, 'full_name', name, body)
 
+# 获取或创建分支ID
 def get_branch_id(token, product_id, repo_id, name):
         path = '/v1/scm/products/' + product_id + '/repositories/' + repo_id + '/branches'
         body = {'name': name, 'sender_name': 'system', 'work_item_identifiers': resolve_identifiers(name)}
         return get_or_create_resource(token, path, 'name', name, body)
 
+# 保存缓存信息到文件
 def save_cache(cache):
         cache_file = os.path.join(tempfile.gettempdir(), 'pc_cache')
         file = open(cache_file, 'w')
         file.write(json.dumps(cache))
         file.close()
 
+# 获取提交记录
 def get_commits():
         if sys.argv[4] == '0000000000000000000000000000000000000000':
             return []
@@ -116,6 +132,7 @@ def get_commits():
                 commits.append({'sha': commit[0], 'tree_id': commit[1], 'committer_name': commit[2], 'committed_at': int(commit[3]), 'message': commit[4], 'work_item_identifiers': resolve_identifiers(commit[4]), 'files_added': [], 'files_removed': [], 'files_modified': []})
             return commits
 
+# 同步提交记录到远程
 def forward_commits(token, product_id, repo_id, branch_id, cache):
         users = cache["users"]
         commits = get_commits()
@@ -127,6 +144,7 @@ def forward_commits(token, product_id, repo_id, branch_id, cache):
                 users[commit["committer_name"]] = True
         cache["users"] = users
 
+# 获取分支名称
 def get_branch_name():
         refs = sys.argv[3].split('/')
         if refs[0] == 'refs' and refs[1] == 'heads':
@@ -134,6 +152,7 @@ def get_branch_name():
         else:
             return
 
+# 主函数，处理逻辑核心
 def main():
     repo_name = sys.argv[1]
     branch_name = get_branch_name()
@@ -163,6 +182,7 @@ def main():
             forward_commits(token, product_id, repo_id, branch_id, cache)
             save_cache(cache)
 
-# sys.argv 1:repo_name 2:repo_path 3:refs 4:oldrev 5:newrev
+# 设置工作目录为脚本执行目录
 os.chdir(sys.argv[2])
+# 执行主函数
 main()
