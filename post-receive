@@ -3,9 +3,22 @@
 current_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_path="$(dirname "$current_dir")"
 repo_name="$(basename "$repo_path" .git)"
+tmp_dir="${TMPDIR:-/tmp}"
+log_file="$tmp_dir/git-commit-sync-to-pingcode_post-receive.log"
 script_path="/data"
 
+echo "Trigger post-receive... $(date +"%Y%m%d_%H%M%S")" >> $log_file 2>&1
 while read oldrev newrev ref
 do
-    python3 $script_path/send-commit.py $repo_name $repo_path $ref $oldrev $newrev
+    # 构造命令
+    cmd="python3 $script_path/send-commit.py $repo_name $repo_path $ref $oldrev $newrev"
+
+    # 记录命令
+    echo "$cmd" >> $log_file 2>&1
+
+    # 执行命令并检查返回值
+    if ! $cmd; then
+        echo "Error executing command: $cmd" >> $log_file 2>&1
+        exit 1
+    fi
 done

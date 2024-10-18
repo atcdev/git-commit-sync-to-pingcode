@@ -43,6 +43,7 @@ def get_token():
         uri = rest_api_root + '/v1/auth/token?grant_type=client_credentials&client_id=' + client_id + '&&client_secret=' + client_secret
         res_data = resolve_res_data(urllib.request.urlopen(uri))
         if res_data['access_token']:
+            print("Token fetched successfully.")
             return res_data['access_token']
         else:
             raise Exception("Invalid client_id or client_secret")
@@ -52,8 +53,10 @@ def ping(token):
         uri = rest_api_root + '/v1/auth/ping?access_token=' + token
         res_data = resolve_res_data(urllib.request.urlopen(uri))
         if res_data['data']:
+            print("Ping successful.")
             return True
         else:
+            print("Ping failed.")
             return False
 
 # 获取资源信息，根据token、路径、属性和值获取资源ID

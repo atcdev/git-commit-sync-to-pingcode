@@ -57,3 +57,15 @@ vim post-receive
 ### 一些已知问题
 1. 如果在本地创建分支，然后本地提交代码，最后一起向远程推送（new branch + new commits），那么这个脚本只会关联分支，而会忽略同批次推送的commits(related branch, ignore commits)。建议先向远程推送分支，在进行代码开发，然后推送代码。
 2. 数据同步到PingCode时，并不会附带修改的内容，因此在PingCode看到的修改文件数量始终为0。
+
+
+
+### 附录：如何快速本地 git 验证
+
+```bash
+mkdir ./{test_git_server,test_git_client}
+git -C ./test_git_server --bare init;
+git -C ./test_git_test init;
+git -C ./test_git_test remote add origin ./test_git_server;
+
+```
